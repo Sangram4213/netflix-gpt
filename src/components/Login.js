@@ -1,10 +1,15 @@
 import React, { useRef, useState } from "react";
 import Header from "./Header";
-import { checkValidData } from "./utils/validate";
+import { checkValidData } from "../utils/validate";
+import { auth } from "../utils/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const Login = () => {
-  const [isSignInForm, setIsSignInForm] = useState(false);
-  const [errorMesaage, setErrorMessage] = useState("");
+  const [isSignInForm, setIsSignInForm] = useState(true);
+  const [errorMesaage, setErrorMessage] = useState(null);
 
   const email = useRef(null);
   const password = useRef(null);
@@ -16,8 +21,54 @@ const Login = () => {
 
   const handleButtonClick = () => {
     //Validate Form Data
-    const message = checkValidData(email.current.value, password.current.value,name.current.value);
+    const message = checkValidData(
+      email?.current?.value,
+      password?.current?.value,
+    );
     setErrorMessage(message);
+
+    if (message) return;
+
+    // Sign In Sign Up Logic
+
+    if (!isSignInForm) {
+      // Sign In Logic
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessages = error.message;
+          setErrorMessage(errorCode + "-" + errorMessages);
+        });
+    } else {
+      // Sign up Logic
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          console.log(user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessages = error.message;
+          setErrorMessage(errorCode + "-" + errorMessages);
+
+        });
+    }
   };
   return (
     <div>
@@ -33,8 +84,8 @@ const Login = () => {
         className="w-3/12 absolute p-12 bg-black mt-36 mx-auto right-0 left-0 text-white rounded-lg bg-opacity-80"
         onSubmit={(e) => e.preventDefault()}
       >
-        <h1 className="font-bold text-3xl py-4">Sign In</h1>
-        {isSignInForm && (
+        <h1 className="font-bold text-3xl py-4">{isSignInForm ?"Sign In":"Sign Up"}</h1>
+        {!isSignInForm && (
           <input
             ref={name}
             type="text"
@@ -59,10 +110,10 @@ const Login = () => {
           className="p-4 my-6 bg-red-700 w-full rounded-lg"
           onClick={handleButtonClick}
         >
-          {isSignInForm ? "Sign Up" : "Sign In"}
+          {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
         <p className="p-4 cursor-pointer" onClick={toggleSignInForm}>
-          {!isSignInForm
+          {isSignInForm
             ? "New to Netflix? Sign Up Now"
             : "Already registered? Sign In Now"}
         </p>
